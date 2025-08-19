@@ -1,0 +1,91 @@
+#!/bin/bash
+
+clear
+read -p "Informe o caminho do compartilhamento //srv/exemplo/caminho: " CAMINHO_COMPARTILHAMENTO
+read -p "Informe o ponto de montagem: " PONTO_MONTAGEM
+MAPA_CRED=/root/mapas
+CAMINHO_SCRIPT=/usr/local/backup
+SERVIDOR=$(hostname -s)
+
+
+function validar-pastas(){
+
+	if [ -e "$1" ]		
+	then
+		echo 
+		echo
+		echo
+		echo "Pasta já exisente"
+	else
+		echo 
+		echo
+		echo
+		mkdir -p $1 && echo "Pasta criada."
+	fi
+}
+
+if [ $PONTO_MONTAGEM ]
+then
+	
+	echo "Criando o ponto de montagem ${PONTO_MONTAGEM}..."
+	sleep 2
+	validar-pastas $PONTO_MONTAGEM
+	
+	echo "Criando a pasta de credenciais ${MAPA_CRED}..."
+	sleep 2
+	validar-pastas $MAPA_CRED
+
+	echo
+	echo "Criando o arquivo da credencial..."
+	sleep 2
+	
+	if [ -e "$MAPA_CRED/mapa.linux.apps" ]		
+	then
+	echo
+		echo "Arquivo já exisente."
+	else
+		touch $MAPA_CRED/mapa.linux.apps
+		echo username=mapa.linux.apps > $MAPA_CRED/mapa.linux.apps
+		echo password=App5L1nuxM4p$ >> $MAPA_CRED/mapa.linux.apps
+		echo domain=srv-4978 >> $MAPA_CRED/mapa.linux.apps
+		
+		echo "Configurando acesso ao arquivo [dentro da pasta /root/mapas]:"
+		sleep 3
+		chown root $MAPA_CRED/mapa.linux.apps
+		chmod 600 $MAPA_CRED/mapa.linux.apps
+		echo "Arquivo mapa.linux.apps criado."	
+		
+		
+	fi
+
+	echo
+	echo "Atualizando o mapeamento em /etc/fstab:"
+	sleep 2
+
+	echo "#" >>  /etc/fstab
+	echo "#Mapeamento para backup" >>  /etc/fstab
+	echo "${CAMINHO_COMPARTILHAMENTO} ${PONTO_MONTAGEM} cifs vers=2.0,credentials=${MAPA_CRED}/mapa.linux.apps 0 0" >>  /etc/fstab
+
+	#Recarrerga o FSTAB
+	systemctl daemon-reload
+
+	echo
+	echo "Teste de montagem com mount..."
+	mount.cifs $CAMINHO_COMPARTILHAMENTO $PONTO_MONTAGEM -o vers=2.0,credentials=${MAPA_CRED}/mapa.linux.apps
+	df -h
+	sleep 2
+	
+	echo
+	echo "Desmonstagem do mount..."
+	umount -l $PONTO_MONTAGEM
+
+	echo
+	echo "Montagem pelo FSTAB..."
+	sleep 2
+	mount --all
+	df -h
+	
+else
+	echo
+	echo "Informe o ponto de montagem."	
+fi	

@@ -1,0 +1,76 @@
+#!/bin/bash
+BACKUP_DIR="/mnt/backup/db"
+DB_USER="glpi"
+DB_PASS="P4ssw0rd"
+DB_NAME="glpi"
+BACKUP_NAME="DB-glpi_$(date +'%Y-%m-%d_%H-%M-%S').sql.tgz"
+DUMP_NAME="DB-glpi_$(date +'%Y-%m-%d_%H-%M-%S').sql"
+
+# Cria o log da execucao do script
+function logApp() {
+	 local LOG_LEVEL=$1
+	  shift
+	   MSG=$@
+	    TIMESTAMP=$(date +"%Y-%m-%d %T")
+	     HOST=$(hostname -s)
+	      PROGRAM_NAME=$0
+
+	       logger "${PROGRAM_NAME}[${PID}]: ${LOG_LEVEL} ${MSG}"
+
+       }
+	   
+#Valida o compartilhamento do backuup
+function validaCompartilhamento(){
+
+	#Tenta gravar um arquivo na pasta do backup
+	touch $destino_backup/teste_bkp
+	if [ "$?" -ne "0" ]
+	then
+		#Se a gravação falhou, então o mapeamento não está conectado.
+		#Registra em log e tenta fazer o mapeamento
+		logApp INFO "Mapeamento não montado. Tentando mapear..."
+		mount -a
+		#Valida a montagem do compartilhamento corretamente
+		if [ "$?" -ne "0" ]
+		then
+			#Sai da função em caso de falha
+			logApp ERROR "Falha ao montar o mapeamento. Verifique a conexão de rede e o acesso à pasta compartilhada."
+			return 1
+		else
+			logApp INFO "Mapeamento reconectado."
+			return 0
+		fi
+	else
+		#A gravação foi bem sucedida, então sai da função com sucesso
+		#e apaga o arquivo.
+		rm -f $destino_backup/teste_bkp
+		return 0
+	fi
+}	   
+
+	#Valida o compartilhamento do backuup
+	validaCompartilhamento
+
+	if [ "$?" -ne "0" ]	   
+	then
+		#Exibe falha de compartilhamento
+		logApp INFO "Possível falha na conexão de rede, para fazer o backup dos artefatos de dados do GLPI . Verifique."
+		exit 1
+	else
+		logApp INFO "Fazendo backup da base de dados MySQL do GLPI."
+		#mysqldump -u$DB_USER -p$DB_PASS $DB_NAME | gzip > "$BACKUP_DIR/$BACKUP_NAME"
+		mysqldump -u$DB_USER -p$DB_PASS $DB_NAME > $DUMP_NAME
+		tar czf $BACKUP_DIR/$BACKUP_NAME $DUMP_NAME 
+		rm -f $DUMP_NAME
+		
+		if [ $? -eq 0 ]; then
+			
+			logApp INFO "Backup da base de dados MySQL do GLPI realizado em $(date)" | mail -s "Backup da base de dados MySQL do GLPI realizado." infraware@semae.sp.gov.br
+		   #Lista os arquivos de backup
+		   ls -lah /mnt/backup/db | grep DB
+		   
+		else
+			logApp ERROR "Falha ao realizar o backup da base de dados MySQL do GLPI. Verifique: se possui permissão de escrita na pasta; se a pasta de destino esta mapeada; se o compartilhamento ainda existe; se o servidor está conectado e se existe conexão de rede." | mail -s "Falha no backup do GLPI." infraware@semae.sp.gov.br
+			exit 1
+		fi
+	fi
