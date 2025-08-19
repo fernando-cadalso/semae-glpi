@@ -15,12 +15,12 @@ function validar-pastas(){
 		echo 
 		echo
 		echo
-		echo "Pasta já exisente"
+		echo "Pasta já exisente. Criação descartada."
 	else
 		echo 
 		echo
 		echo
-		mkdir -p $1 && echo "Pasta criada."
+		mkdir -p $1 && echo "Pasta criada com sucesso."
 	fi
 }
 
