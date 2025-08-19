@@ -26,13 +26,13 @@ if [ "$?" -eq "0" ]
 then
 
 	# Faz o backup da aplicação GLPI
-	logApp INFO "Início do backup da aplicação GLPI."
+	logApp INFO "INFO: Início do backup da aplicação GLPI."
 	/usr/local/backup/bkp-app-script.sh
 	if [ "$?" -eq "0" ]
 	then
 
 		# Faz o backup dos artefatos de dados do GLPI
-		logApp INFO "Início do backup dos artefatos de dados do GLPI."
+		logApp INFO "INFO: Início do backup dos artefatos de dados do GLPI."
 		/usr/local/backup/bkp-artefatos-dados_script.sh
 		if [ "$?" -eq "0" ]
 		then
