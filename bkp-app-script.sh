@@ -32,7 +32,7 @@ function validaCompartilhamento(){
 		if [ "$?" -ne "0" ]
 		then
 			#Sai da função em caso de falha
-			logApp ERROR "Falha ao montar o mapeamento. Verifique a conexão de rede e o acesso à pasta compartilhada."
+			logApp ERROR "ERR.: Falha ao montar o mapeamento. Verifique a conexão de rede e o acesso à pasta compartilhada."
 			return 1
 		else
 			logApp INFO "Mapeamento reconectado."
@@ -45,7 +45,7 @@ function validaCompartilhamento(){
 		return 0
 	fi
 }
-       logApp INFO "Início do backup da aplicação GLPI."
+       logApp INFO "INFO: Início do backup da aplicação GLPI."
 
        #Origem dos arquivos
        arquivos_backup="/var/www/glpi"
